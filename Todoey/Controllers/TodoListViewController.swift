@@ -8,8 +8,10 @@
 
 import UIKit
 import RealmSwift
+import SwipeCellKit
+import ChameleonFramework
 
-class TodoListViewController: UITableViewController {
+class TodoListViewController: SwipeTableViewController {
     
     var todoItems: Results<Item>?
     
@@ -18,6 +20,8 @@ class TodoListViewController: UITableViewController {
     var selectedCategoty : Category? {
         didSet {
             loadData()
+            
+            tableView.separatorStyle = .none
         }
     }
     
@@ -34,11 +38,17 @@ class TodoListViewController: UITableViewController {
     
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         
-        let cell = tableView.dequeueReusableCell(withIdentifier: "ToDoItemCell", for: indexPath)
+        let cell = super.tableView(self.tableView, cellForRowAt: indexPath)
         
-        cell.textLabel?.text = self.todoItems?[indexPath.row].title ?? "No items added yet"
-        
-        cell.accessoryType = self.todoItems![indexPath.row].done ? UITableViewCell.AccessoryType.checkmark : UITableViewCell.AccessoryType.none
+        if let item = todoItems?[indexPath.row]{
+            
+            cell.textLabel?.text = item.title
+            cell.accessoryType = item.done ? UITableViewCell.AccessoryType.checkmark : UITableViewCell.AccessoryType.none
+            cell.backgroundColor = FlatSkyBlue().darken(byPercentage: CGFloat(indexPath.row) / CGFloat(todoItems!.count))
+            
+        } else {
+            cell.textLabel?.text = "No items added yet"
+        }
         
         return cell
     }
@@ -96,6 +106,18 @@ class TodoListViewController: UITableViewController {
         self.tableView.reloadData()
     }
     
+    override func updateModel(at indexPath: IndexPath) {
+        
+        if let itemForDeletion = self.todoItems?[indexPath.row] {
+            do {
+                try self.realm.write {
+                    self.realm.delete(itemForDeletion)
+                }
+            } catch {
+                print("Error \(error)")
+            }
+        }
+    } 
 }
 
 //MARK: - Search bar methods
@@ -113,3 +135,4 @@ extension TodoListViewController : UISearchBarDelegate {
         }
     }
 }
+

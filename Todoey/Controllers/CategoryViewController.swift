@@ -8,8 +8,9 @@
 
 import UIKit
 import RealmSwift
+import ChameleonFramework
 
-class CategoryViewController: UITableViewController {
+class CategoryViewController: SwipeTableViewController {
     
     let realm = try! Realm()
     
@@ -19,6 +20,8 @@ class CategoryViewController: UITableViewController {
         super.viewDidLoad()
         
         self.loadData()
+        
+        tableView.separatorStyle = .none
     }
     
     //MARK - TableViewDelegate Methdos
@@ -42,14 +45,15 @@ class CategoryViewController: UITableViewController {
         return categoryArray?.count ?? 1
     }
     
-    
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         
-        let cell = tableView.dequeueReusableCell(withIdentifier: "CategoryCell", for: indexPath)
+        let cell = super.tableView(tableView, cellForRowAt: indexPath)
         
-        cell.textLabel?.text = self.categoryArray?[indexPath.row].name ?? "No categories added yet"
+        cell.textLabel?.text = self.categoryArray?[indexPath.row].name ?? "No Categories added yet"
+        cell.backgroundColor = UIColor(hexString: self.categoryArray?[indexPath.row].colour ?? "")
         
         return cell
+        
     }
     
     //MARK - Add new Items
@@ -65,6 +69,7 @@ class CategoryViewController: UITableViewController {
             
             let newCategory = Category()
             newCategory.name = textField.text!
+            newCategory.colour = UIColor.randomFlat.hexValue()
             
             self.saveData(category: newCategory)
         }
@@ -97,4 +102,18 @@ class CategoryViewController: UITableViewController {
         categoryArray = realm.objects(Category.self)
         self.tableView.reloadData()
     }
+    
+    override func updateModel(at indexPath: IndexPath) {
+        
+        if let categoryForDeletion = self.categoryArray?[indexPath.row] {
+            do {
+                try self.realm.write {
+                    realm.delete(categoryForDeletion)
+                }
+            } catch {
+                print("Error: \(error)")
+            }
+        }
+    }
 }
+ 
